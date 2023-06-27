@@ -1,0 +1,260 @@
+#0. feladat behelyesítem a neptun kódóm.
+
+x="o2ixlb";#neptun kód
+z=charToRaw(iconv(x, "latin1", "UTF-8"))
+for (i in 1:6) v=paste("0x",z,sep="")
+e=strtoi(v)
+ax=e[1];ay=e[2];az=e[3];av=e[4];ss=sum(strtoi(v))+24
+cat("ax=",ax,"\n")
+cat("ay=",ay,"\n")
+cat("az=",az,"\n")
+cat("av=",av,"\n")
+cat("ss=",ss,"\n")
+ar=c( "FB","AAPL","AMZN","GOOG","NFLX","TSLA")
+ai=ss-6*floor(ss/6)
+ev=2021-(ss-10*floor(ss/10))
+cat("ev=",ev,"\n")
+cat("reszveny=",ar[ai+1],"\n")
+
+## OUTPUT: 
+##	ev= 2015
+##	reszveny= NFLX
+
+#1. feladat: 1000 elemű minta reláció:
+
+		set.seed(ss)
+			nx=1000
+			v=matrix(c(ax,abs(ax-ay),abs(ax-ay),ay),2)
+			w=chol(v)
+			z1=sqrt(-2*log(runif(nx)))*sin(runif(nx)*2*pi)
+			z2=sqrt(-2*log(runif(nx)))*cos(runif(nx)*2*pi)
+			zm=matrix(c(z1,z2),ncol=2)
+		zn=zm%*%w
+
+#A) feladat:
+plot(zn, main="ketdimenzios realizacio")
+
+#Milyen eloszlasu lehet a fuggveny?
+
+
+# kovetkezonek hozza adtam egy package-t
+#--- Please select a CRAN mirror for use in this session ---
+#trying URL 'https://cran.rapporter.net/bin/windows/contrib/4.1/MASS_7.3-57.zip'
+#Content type 'application/zip' length 1190770 bytes (1.1 MB)
+#downloaded 1.1 MB
+
+#package ‘MASS’ successfully unpacked and MD5 sums checked
+
+#The downloaded binary packages are in
+#        C:\Users\Diak\AppData\Local\Temp\RtmpiKFVEn\downloaded_packages
+#
+
+#A MASS package segitsegevel probaltam abrzolni gorbet es rajonni melyek eloszlas lehet
+
+library(MASS)
+
+#kovetkezo kodokat hasznaltam. Felteszem hogy normalis eloszlas 
+
+fitdistr(zn, densfun="normal")
+
+#kovetkezo eredmenyt kaptam
+#> fitdistr(zn, densfun="normal")
+#     mean         sd    
+#  0.1343796   9.4230144 
+# (0.2107050) (0.1489909)
+#
+
+#Ez utan csinalok egy hisztogrammot es egy gorbet
+fit <- fitdistr(zn, densfun="normal")
+fit
+
+hist(zn, pch=20, breaks=25, prob=TRUE, main="")
+curve(dnorm(x, fit$estimate[1], fit$estimate[2]), col="red", lwd=2, add=T)
+
+#megnezzuk likelyhooddal
+
+log_likelihood <- function(params) { -sum(dnorm(zn, params[1], params[2], log=TRUE)) }
+fit2 <- optim(c(0,1), log_likelihood)    
+fit2
+
+# kovetkezo eredmenyt kaptam:
+#
+#$par
+#[1] 0.1436455 9.4279092
+#
+#$value
+#[1] 7324.189
+#
+#$counts
+#function gradient 
+#      57       NA 
+#
+#$convergence
+#[1] 0
+#
+#$message
+#NULL
+
+## Ezutan a gorbet abrazoljuk
+hist(zn, pch=20, breaks=25, prob=TRUE)
+curve(dnorm(x, fit2$par[1],     fit2$par[2]),     col="blue", lwd=6, add=T) # optim fit
+curve(dnorm(x, fit$estimate[1], fit$estimate[2]), col="red",  lwd=2, add=T) # fitdistr fit
+
+print("A weibul eloszlasu")
+
+#parameterek becsulese: Hozza adtam a moments package amivel a ferdeseget es a lapultagat tudom nezni
+# plusz az elozo arbazolassal lehet latni a felso es also hatarit
+
+library(moments) 
+skewness(zn)
+kurtosis(zn)
+
+#eredmenyek
+#> skewness(zn)# lapultsag
+#[1] -0.08648769 -0.02733868
+#> kurtosis(zn)# ferdeseg
+#[1] 3.088212 3.204510
+
+
+#2. Feladat
+print("2. feladat")
+
+plot(zn, main="ketdimenzios realizacio 2es feladat")
+
+#3. feladat:
+
+print("3, felaadat")
+
+#A 3. feladatot a kovetkezokeppen oldottam meg
+
+set.seed(ss+17)	#setseed beallitasa
+nsim <- 50
+t <- 500	#intervallum
+mu <- ax	
+sigma <- (ax+ay)/(ax+ay+az)	#varhato eretek
+S0 <- 500	
+gbm_vec <- function(nsim = 100, t = 25, mu = 0, sigma = 0.1, S0 = 100, dt = 1./365) {
+epsilon <- matrix(rnorm(t*nsim), ncol = nsim, nrow = t)  
+gbm <- exp((mu - sigma * sigma / 2) * dt + sigma * epsilon * sqrt(dt))
+gbm <- apply(rbind(rep(S0, nsim), gbm), 2, cumprod)
+return(gbm)
+
+}#GBM model
+gbm <- gbm_vec(nsim, t, mu, sigma, S0)
+summary(gbm)
+ 
+plot(gbm)
+
+##("EREDMENY:")
+print("
+       V1                  V2                  V3                  V4                  V5           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:1.386e+19   1st Qu.:2.741e+19   1st Qu.:1.879e+19   1st Qu.:8.550e+18   1st Qu.:1.604e+19  
+ Median :2.908e+35   Median :8.483e+35   Median :1.759e+36   Median :2.359e+35   Median :6.441e+35  
+ Mean   :1.273e+66   Mean   :6.111e+66   Mean   :1.100e+67   Mean   :6.551e+65   Mean   :7.542e+66  
+ 3rd Qu.:9.258e+51   3rd Qu.:2.096e+52   3rd Qu.:5.282e+52   3rd Qu.:3.435e+51   3rd Qu.:3.327e+52  
+ Max.   :1.682e+68   Max.   :7.676e+68   Max.   :1.471e+69   Max.   :8.889e+67   Max.   :1.011e+69  
+       V6                  V7                  V8                  V9                 V10           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:7.328e+18   1st Qu.:1.462e+19   1st Qu.:5.293e+18   1st Qu.:1.588e+19   1st Qu.:1.782e+19  
+ Median :1.317e+35   Median :5.524e+35   Median :1.997e+35   Median :3.930e+35   Median :3.564e+35  
+ Mean   :5.324e+65   Mean   :4.705e+66   Mean   :5.342e+65   Mean   :4.666e+66   Mean   :7.168e+66  
+ 3rd Qu.:2.420e+51   3rd Qu.:2.452e+52   3rd Qu.:3.636e+51   3rd Qu.:2.553e+52   3rd Qu.:1.580e+52  
+ Max.   :6.821e+67   Max.   :6.274e+68   Max.   :7.302e+67   Max.   :5.971e+68   Max.   :9.424e+68  
+      V11                 V12                 V13                 V14                 V15           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:8.761e+18   1st Qu.:2.738e+19   1st Qu.:1.616e+19   1st Qu.:7.555e+18   1st Qu.:1.276e+19  
+ Median :1.204e+35   Median :8.484e+35   Median :3.551e+35   Median :2.262e+35   Median :6.720e+35  
+ Mean   :1.044e+66   Mean   :4.991e+66   Mean   :3.932e+66   Mean   :2.246e+66   Mean   :6.042e+66  
+ 3rd Qu.:3.483e+51   3rd Qu.:2.251e+52   3rd Qu.:1.708e+52   3rd Qu.:1.142e+52   3rd Qu.:1.528e+52  
+ Max.   :1.330e+68   Max.   :6.544e+68   Max.   :5.245e+68   Max.   :2.948e+68   Max.   :8.351e+68  
+      V16                 V17                 V18                 V19                 V20           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:1.776e+19   1st Qu.:9.364e+18   1st Qu.:8.237e+18   1st Qu.:1.367e+19   1st Qu.:1.513e+19  
+ Median :3.287e+35   Median :2.150e+35   Median :5.050e+35   Median :2.856e+35   Median :4.901e+35  
+ Mean   :3.409e+66   Mean   :2.319e+66   Mean   :5.480e+66   Mean   :3.308e+66   Mean   :3.677e+66  
+ 3rd Qu.:9.919e+51   3rd Qu.:8.805e+51   3rd Qu.:2.005e+52   3rd Qu.:9.986e+51   3rd Qu.:1.464e+52  
+ Max.   :4.584e+68   Max.   :2.993e+68   Max.   :6.912e+68   Max.   :4.515e+68   Max.   :4.890e+68  
+      V21                 V22                 V23                 V24                 V25           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:9.108e+18   1st Qu.:1.783e+19   1st Qu.:1.772e+19   1st Qu.:1.315e+19   1st Qu.:1.951e+19  
+ Median :2.916e+35   Median :5.447e+35   Median :1.311e+36   Median :4.569e+35   Median :4.782e+35  
+ Mean   :2.143e+66   Mean   :3.319e+66   Mean   :1.300e+67   Mean   :3.963e+66   Mean   :2.563e+66  
+ 3rd Qu.:1.044e+52   3rd Qu.:1.537e+52   3rd Qu.:5.565e+52   3rd Qu.:1.306e+52   3rd Qu.:1.533e+52  
+ Max.   :2.631e+68   Max.   :3.883e+68   Max.   :1.731e+69   Max.   :5.382e+68   Max.   :3.307e+68  
+      V26                 V27                 V28                 V29                 V30           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:1.608e+19   1st Qu.:1.781e+19   1st Qu.:1.412e+19   1st Qu.:2.139e+19   1st Qu.:2.663e+19  
+ Median :6.148e+35   Median :6.108e+35   Median :7.276e+35   Median :2.908e+35   Median :7.579e+35  
+ Mean   :3.753e+66   Mean   :2.614e+66   Mean   :4.727e+66   Mean   :4.833e+66   Mean   :2.213e+66  
+ 3rd Qu.:1.340e+52   3rd Qu.:1.558e+52   3rd Qu.:1.669e+52   3rd Qu.:1.216e+52   3rd Qu.:1.423e+52  
+ Max.   :4.800e+68   Max.   :3.541e+68   Max.   :6.317e+68   Max.   :6.688e+68   Max.   :2.886e+68  
+      V31                 V32                 V33                 V34                 V35           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:2.974e+19   1st Qu.:2.761e+19   1st Qu.:1.789e+19   1st Qu.:1.747e+19   1st Qu.:1.202e+19  
+ Median :8.574e+35   Median :6.152e+35   Median :6.252e+35   Median :4.694e+35   Median :4.501e+35  
+ Mean   :9.787e+66   Mean   :8.693e+66   Mean   :8.121e+66   Mean   :4.722e+66   Mean   :4.043e+66  
+ 3rd Qu.:2.855e+52   3rd Qu.:2.566e+52   3rd Qu.:2.896e+52   3rd Qu.:2.488e+52   3rd Qu.:1.438e+52  
+ Max.   :1.242e+69   Max.   :1.202e+69   Max.   :1.020e+69   Max.   :6.247e+68   Max.   :5.408e+68  
+      V36                 V37                 V38                 V39                 V40           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:2.343e+19   1st Qu.:2.514e+19   1st Qu.:1.813e+19   1st Qu.:1.325e+19   1st Qu.:1.141e+19  
+ Median :6.626e+35   Median :7.736e+35   Median :7.771e+35   Median :8.458e+35   Median :2.696e+35  
+ Mean   :4.785e+66   Mean   :1.014e+67   Mean   :8.040e+66   Mean   :8.649e+66   Mean   :1.548e+66  
+ 3rd Qu.:1.539e+52   3rd Qu.:2.854e+52   3rd Qu.:2.932e+52   3rd Qu.:2.744e+52   3rd Qu.:9.797e+51  
+ Max.   :6.415e+68   Max.   :1.334e+69   Max.   :1.073e+69   Max.   :1.131e+69   Max.   :2.044e+68  
+      V41                 V42                 V43                 V44                 V45           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:1.192e+19   1st Qu.:9.600e+18   1st Qu.:1.813e+19   1st Qu.:2.712e+19   1st Qu.:2.991e+19  
+ Median :5.075e+35   Median :2.398e+35   Median :2.979e+35   Median :9.639e+35   Median :1.114e+36  
+ Mean   :4.009e+66   Mean   :1.354e+66   Mean   :2.054e+66   Mean   :6.514e+66   Mean   :1.420e+67  
+ 3rd Qu.:2.455e+52   3rd Qu.:6.989e+51   3rd Qu.:9.946e+51   3rd Qu.:2.356e+52   3rd Qu.:3.747e+52  
+ Max.   :5.149e+68   Max.   :1.817e+68   Max.   :2.627e+68   Max.   :8.026e+68   Max.   :1.823e+69  
+      V46                 V47                 V48                 V49                 V50           
+ Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02   Min.   :5.000e+02  
+ 1st Qu.:3.046e+19   1st Qu.:1.630e+19   1st Qu.:1.209e+19   1st Qu.:1.413e+19   1st Qu.:8.504e+18  
+ Median :1.317e+36   Median :5.663e+35   Median :2.101e+35   Median :3.734e+35   Median :2.786e+35  
+ Mean   :9.489e+66   Mean   :1.381e+66   Mean   :2.056e+66   Mean   :2.143e+66   Mean   :1.067e+66  
+ 3rd Qu.:4.041e+52   3rd Qu.:8.717e+51   3rd Qu.:8.274e+51   3rd Qu.:1.190e+52   3rd Qu.:7.579e+51  
+ Max.   :1.229e+69   Max.   :1.748e+68   Max.   :2.785e+68   Max.   :2.741e+68   Max.   :1.388e+68  
+>  ")
+
+#4-5. feladat:
+print("4-5 feladat")
+#https://finance.yahoo.com/quote/NFLX/history?p=NFLX
+
+### 4-5. feladat
+ 
+# ev= 2015
+# reszveny= NFLX
+# 
+ 
+ 
+reszveny=read.csv("D:/NFLX.csv")
+x = reszveny$Close
+ 
+logreturn = c()
+for(n in 1:length(x)-1){
+  logreturn[n] = abs(log(x[n+1]/x[n]))
+}
+chisq.test(logreturn)
+
+#EREDMENY:
+#> chisq.test(logreturn)
+#
+#        Chi-squared test for given probabilities
+#
+#data:  logreturn
+#X-squared = 48.305, df = 1855, p-value = 1
+#
+#Warning message:
+#In chisq.test(logreturn) : Chi-squared approximation may be incorrect
+
+#Most abrazuljuk:
+
+plot(logreturn, main="logreturn")
+hist(logreturn)
+
+
+
+
