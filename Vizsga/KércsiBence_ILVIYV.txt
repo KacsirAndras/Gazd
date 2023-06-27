@@ -1,0 +1,130 @@
+> x="ILVIYV";
+> z=charToRaw(iconv(x, "latin1", "UTF-8"))
+> for (i in 1:6) v=paste("0x",z,sep="")
+> e=strtoi(v)
+> ax=e[1];ay=e[2];az=e[3];av=e[4];ss=sum(strtoi(v))+24
+> cat("ax=",ax,"\n")
+ax= 73 
+> cat("ay=",ay,"\n")
+ay= 76 
+> cat("az=",az,"\n")
+az= 86 
+> cat("av=",av,"\n")
+av= 73 
+> cat("ss=",ss,"\n")
+ss= 507 
+> ar=c( "FB","AAPL","AMZN","GOOG","NFLX","TSLA")
+> ai=ss-6*floor(ss/6)
+> ev=2022-(ss-10*floor(ss/10))
+> cat("ev=",ev,"\n")
+ev= 2015 
+> cat("reszveny=",ar[ai+1],"\n")
+reszveny= GOOG 
+
+//1. feladat
+> set.seed(ss)
+> nx=700
+> v=matrix(c(ax,abs(ax-ay),abs(ax-ay),ay),2)
+> w=chol(v)
+> z1=sqrt(-2*log(runif(nx)))*sin(runif(nx)*2*pi)
+> z2=sqrt(-2*log(runif(nx)))*cos(runif(nx)*2*pi)
+> zm=matrix(c(z1,z2),ncol=2)
+> zn=5*zm%*%w
+
+> summary(zn)
+       V1                 V2           
+ Min.   :-148.229   Min.   :-147.5833  
+ 1st Qu.: -32.333   1st Qu.: -27.6211  
+ Median :  -3.215   Median :   0.2496  
+ Mean   :  -3.202   Mean   :   1.4671  
+ 3rd Qu.:  24.781   3rd Qu.:  29.0700  
+ Max.   : 162.210   Max.   : 168.8026  
+
+> library(ggpubr)
+> ggdensity(zn[,1], main="Sűrűségdiagram")
+
+> cor(zn)
+           [,1]       [,2]
+[1,] 1.00000000 0.07308446
+[2,] 0.07308446 1.00000000
+
+
+//3. feladat
+> library(LSMRealOptions)
+> set.seed(ss+27)
+> n <- 1
+> t <- 500/365
+> mu= ax
+> sigma=(ax+az)/(ax+ay+az)
+> S0 <- 100
+> dt <- 1/365
+> gbm <- GBM_simulate(n, t, mu, sigma, S0, dt);
+> plot(gbm, type='l')
+> summary(gbm)
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+1.000e+02 6.805e+12 6.222e+23 3.003e+43 3.660e+34 2.833e+45 
+> library(moments)
+> skewness(gbm)
+[1] 9.401998
+
+//5. feladat
+> details = read.csv("C:/Users/au084329/Downloads/GOOG.csv")
+> logreturn = c()
+> zaro = details$Close
+> for (i in 1:length(zaro)-1){
++ logreturn[i] = abs(log(zaro[i+1]/zaro[i]))
++ }
+> chisq.test(logreturn)
+
+        Chi-squared test for given probabilities
+
+data:  logreturn
+X-squared = 4.0683, df = 249, p-value = 1
+
+Warning message:
+In chisq.test(logreturn) : Chi-squared approximation may be incorrect
+> hist(logreturn, main="Záró árak változása")
+> plot(logreturn)
+
+//4. feladat
+> poisson <- function () {
++   set.seed(ss+17)
++   lambda <- 2
++   time_interval <- 1000
++   x.new.p <- y.new.p <- numeric()
++   
++   for (i in 1:time_interval) {
++     x <- rpois(1, lambda)
++     y <- rpois(1, lambda)
++     
++     x.new.p <- c(x.new.p, ifelse(length(x.new.p) > 0, x.new.p[length(x.new.p)] + x, x))
++     y.new.p <- c(y.new.p, ifelse(length(y.new.p) > 0, y.new.p[length(y.new.p)] + y, y))
++     
++     plot(x.new.p, y.new.p, type = "b", main = paste("Poisson folyamat\nIdo", i, sep = ""),
++          xlab = "x koordinatak", ylab = "y koordinatak", col = c(rep("gray", i - 1), "red"),
++          pch = c(rep(20, i - 1), 1))
++   }
++   
++   poisson_g <- matrix(c(x.new.p, y.new.p), ncol = 2)
++   return(poisson_g)
++ }
+> 
+> poisson_generalt <- poisson()
+
+//2.feladat
+correlation <- -0.7
+sample_size <- 1000
+
+# Exponenciális eloszlású minták generálása
+x <- rexp(sample_size)
+y <- rexp(sample_size)
+
+# Korreláció alkalmazása
+correlated_x <- x
+correlated_y <- correlation * x + sqrt(1 - correlation^2) * y
+
+# Ábrázolás
+plot(correlated_x, correlated_y, type = "p", pch = 16, col = "blue",
+     xlab = "X", ylab = "Y", main = "Exponenciális eloszlású minta")
+
+
